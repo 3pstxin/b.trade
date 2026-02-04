@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>b.trade - Pump.fun Live</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#09090b;color:#fafafa;min-height:100vh;font-size:13px}
+.app{display:flex;flex-direction:column;height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #1f1f23;background:#0c0c0f}
+.logo{font-size:18px;font-weight:700;letter-spacing:-0.5px;display:flex;align-items:center;gap:8px}
+.logo span{color:#22c55e}
+.logo-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+.logo-dot.live{background:#22c55e}
+.logo-dot.offline{background:#ef4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.controls{display:flex;gap:8px;align-items:center}
+.search{padding:8px 12px;border:1px solid #27272a;border-radius:6px;background:#18181b;color:#fafafa;font-size:12px;width:180px}
+.search:focus{outline:none;border-color:#22c55e}
+.btn{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#000;font-weight:600;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.btn:hover{background:#16a34a}
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:#0c0c0f;border-bottom:1px solid #1f1f23;font-size:10px}
+.status{display:flex;align-items:center;gap:6px}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.status-dot.on{background:#22c55e}
+.status-dot.off{background:#ef4444}
+.status-text{color:#52525b}
+.status-text.on{color:#22c55e}
+.main{flex:1;display:flex;overflow:hidden}
+.column{flex:1;display:flex;flex-direction:column;border-right:1px solid #1f1f23;min-width:0}
+.column:last-child{border-right:none}
+.col-header{padding:12px 16px;border-bottom:1px solid #1f1f23;background:#0c0c0f;display:flex;align-items:center;justify-content:space-between}
+.col-title{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.col-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.col-new .col-icon{background:#3b82f615;color:#3b82f6}
+.col-surge .col-icon{background:#f59e0b15;color:#f59e0b}
+.col-graduated .col-icon{background:#22c55e15;color:#22c55e}
+.col-count{font-size:11px;color:#52525b;font-weight:400}
+.col-list{flex:1;overflow-y:auto;padding:8px}
+.token{background:#18181b;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;border:1px solid transparent;display:block;text-decoration:none;color:inherit}
+.token:hover{background:#1f1f23;border-color:#27272a}
+.token.new-entry{animation:highlight 2s ease-out}
+@keyframes highlight{0%{background:#22c55e30;border-color:#22c55e}100%{background:#18181b;border-color:transparent}}
+.token-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.token-info{display:flex;align-items:center;gap:8px;min-width:0}
+.token-avatar{width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#e879f9,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;overflow:hidden}
+.token-avatar img{width:100%;height:100%;object-fit:cover}
+.token-name{min-width:0}
+.token-symbol{font-weight:600;font-size:13px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.token-full{font-size:10px;color:#52525b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
+.token-price{text-align:right}
+.token-mcap{font-weight:600;font-size:13px}
+.token-stats{display:flex;gap:8px;font-size:10px;color:#71717a;flex-wrap:wrap}
+.token-stat{display:flex;flex-direction:column;gap:1px}
+.token-stat-label{color:#52525b;font-size:9px;text-transform:uppercase}
+.token-stat-value{color:#a1a1aa}
+.token-progress{margin-top:6px;padding-top:6px;border-top:1px solid #27272a}
+.progress-bar{height:4px;background:#27272a;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#e879f9,#22c55e);border-radius:2px;transition:width 0.3s}
+.progress-text{display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:#71717a}
+.token-age{font-size:10px;color:#f59e0b;font-weight:500}
+.badge{font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600;margin-left:4px}
+.badge-new{background:#3b82f620;color:#3b82f6}
+.badge-king{background:#f59e0b20;color:#f59e0b}
+.badge-hot{background:#ef444420;color:#ef4444}
+.empty{text-align:center;padding:40px 20px;color:#52525b;font-size:12px}
+.link-ext{color:#52525b;font-size:10px;margin-left:auto}
+.filters{display:flex;gap:6px;padding:8px 16px;background:#0c0c0f;border-bottom:1px solid #1f1f23;flex-wrap:wrap;align-items:center}
+.filter-label{color:#52525b;font-size:10px;text-transform:uppercase;margin-right:4px}
+.filter-btn{padding:5px 10px;border:1px solid #27272a;border-radius:4px;background:#18181b;color:#71717a;font-size:11px;cursor:pointer;transition:all 0.15s}
+.filter-btn:hover{border-color:#3f3f46;color:#a1a1aa}
+.filter-btn.active{background:#22c55e20;border-color:#22c55e;color:#22c55e}
+.filter-select{padding:5px 8px;border:1px solid #27272a;border-radius:4px;background:#18181b;color:#a1a1aa;font-size:11px;cursor:pointer}
+@media(max-width:900px){
+  .main{flex-direction:column}
+  .column{border-right:none;border-bottom:1px solid #1f1f23}
+  .col-list{max-height:35vh}
+  .search{width:120px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+<div class="logo">
+<span>b</span>.trade
+<div class="logo-dot offline" id="ws-status"></div>
+</div>
+<div class="controls">
+<input type="text" class="search" id="search" placeholder="Search...">
+<button class="btn" onclick="refresh()">↻ Refresh</button>
+</div>
+</div>
+<div class="status-bar">
+<div class="status">
+<div class="status-dot off" id="api-status"></div>
+<span class="status-text" id="api-text">Connecting...</span>
+</div>
+<div style="color:#52525b">
+<span id="coin-count">0</span> tokens • Updated <span id="last-update">-</span>
+</div>
+</div>
+<div class="filters">
+<span class="filter-label">Filters:</span>
+<button class="filter-btn" id="filter-image" onclick="toggleFilter('image')">Has Image</button>
+<button class="filter-btn" id="filter-mcap-1k" onclick="toggleFilter('mcap1k')">MCap > $1K</button>
+<button class="filter-btn" id="filter-mcap-10k" onclick="toggleFilter('mcap10k')">MCap > $10K</button>
+<button class="filter-btn" id="filter-volume" onclick="toggleFilter('volume')">Has Volume</button>
+<button class="filter-btn" id="filter-replies" onclick="toggleFilter('replies')">Has Replies</button>
+</div>
+<div class="main">
+<div class="column col-new">
+<div class="col-header">
+<div class="col-title"><div class="col-icon">🆕</div>New Pairs <span class="col-count" id="count-new">(0)</span></div>
+<span style="font-size:10px;color:#52525b">&lt; 10 min</span>
+</div>
+<div class="col-list" id="list-new"><div class="empty">Connecting to server...</div></div>
+</div>
+<div class="column col-surge">
+<div class="col-header">
+<div class="col-title"><div class="col-icon">🔥</div>Final Stretch <span class="col-count" id="count-surge">(0)</span></div>
+<span style="font-size:10px;color:#52525b">&gt; 50% bonding</span>
+</div>
+<div class="col-list" id="list-surge"><div class="empty">Loading...</div></div>
+</div>
+<div class="column col-graduated">
+<div class="col-header">
+<div class="col-title"><div class="col-icon">✓</div>Graduated <span class="col-count" id="count-graduated">(0)</span></div>
+<span style="font-size:10px;color:#52525b">On Raydium</span>
+</div>
+<div class="col-list" id="list-graduated"><div class="empty">Loading...</div></div>
+</div>
+</div>
+</div>
+<script>
+var coins = [];
+var ws = null;
+var wsConnected = false;
+var knownAddresses = new Set();
+var TEN_MIN = 10 * 60 * 1000;
+var filters = {
+  image: false,
+  mcap1k: false,
+  mcap10k: false,
+  volume: false,
+  replies: false
+};
+
+function toggleFilter(name) {
+  filters[name] = !filters[name];
+  var btn = document.getElementById('filter-' + name.replace('mcap1k', 'mcap-1k').replace('mcap10k', 'mcap-10k'));
+  if (btn) btn.className = 'filter-btn' + (filters[name] ? ' active' : '');
+  render();
+}
+
+function applyFilters(list) {
+  return list.filter(function(c) {
+    if (filters.image && !c.image) return false;
+    if (filters.mcap1k && (!c.mcap || c.mcap < 1000)) return false;
+    if (filters.mcap10k && (!c.mcap || c.mcap < 10000)) return false;
+    if (filters.volume && (!c.volume24h || c.volume24h < 100)) return false;
+    if (filters.replies && (!c.replies || c.replies < 1)) return false;
+    return true;
+  });
+}
+
+function fmt(n) {
+  if (!n || isNaN(n)) return '-';
+  n = parseFloat(n);
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+  if (n >= 1) return '$' + n.toFixed(2);
+  if (n >= 0.0001) return '$' + n.toFixed(6);
+  return '$' + n.toExponential(2);
+}
+
+function fmtAge(ms) {
+  if (!ms || ms < 0) return '-';
+  var s = Math.floor(ms / 1000);
+  if (s < 60) return s + 's';
+  var m = Math.floor(s / 60);
+  if (m < 60) return m + 'm';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h';
+  return Math.floor(h / 24) + 'd';
+}
+
+function getInitials(s) {
+  if (!s) return '??';
+  return s.substring(0, 2).toUpperCase();
+}
+
+function renderToken(p, isNew) {
+  var h = '<a href="' + p.url + '" target="_blank" class="token' + (isNew ? ' new-entry' : '') + '">';
+  h += '<div class="token-top">';
+  h += '<div class="token-info">';
+  if (p.image) {
+    h += '<div class="token-avatar"><img src="' + p.image + '" onerror="this.style.display=\'none\'"></div>';
+  } else {
+    h += '<div class="token-avatar">' + getInitials(p.symbol) + '</div>';
+  }
+  h += '<div class="token-name">';
+  h += '<div class="token-symbol">' + p.symbol;
+  if (p.isKing) h += '<span class="badge badge-king">👑 KING</span>';
+  else if (p.age && p.age < TEN_MIN) h += '<span class="badge badge-new">NEW</span>';
+  h += '</div>';
+  h += '<div class="token-full">' + p.name + '</div>';
+  h += '</div></div>';
+  h += '<div class="token-price">';
+  h += '<div class="token-mcap">' + fmt(p.mcap) + '</div>';
+  h += '</div></div>';
+  h += '<div class="token-stats">';
+  h += '<div class="token-stat"><span class="token-stat-label">Age</span><span class="token-age">' + fmtAge(p.age) + '</span></div>';
+  h += '<div class="token-stat"><span class="token-stat-label">Progress</span><span class="token-stat-value">' + (p.progress || 0).toFixed(1) + '%</span></div>';
+  h += '<div class="token-stat"><span class="token-stat-label">Replies</span><span class="token-stat-value">' + (p.replies || 0) + '</span></div>';
+  h += '<span class="link-ext">↗</span>';
+  h += '</div>';
+
+  if (!p.graduated && p.progress < 100) {
+    h += '<div class="token-progress">';
+    h += '<div class="progress-bar"><div class="progress-fill" style="width:' + Math.min(p.progress, 100) + '%"></div></div>';
+    h += '<div class="progress-text"><span>Bonding curve</span><span>' + fmt(p.mcap) + ' / $69K</span></div>';
+    h += '</div>';
+  }
+
+  h += '</a>';
+  return h;
+}
+
+function render(newAddresses) {
+  newAddresses = newAddresses || new Set();
+  var q = document.getElementById('search').value.toLowerCase();
+
+  var filtered = coins.filter(function(c) {
+    if (q && c.symbol.toLowerCase().indexOf(q) === -1 && c.name.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+
+  // Apply custom filters
+  filtered = applyFilters(filtered);
+
+  // New pairs: < 10 minutes, not graduated
+  var newPairs = filtered.filter(function(c) {
+    return !c.graduated && c.age && c.age < TEN_MIN;
+  }).sort(function(a, b) { return a.age - b.age; });
+
+  // Final stretch: > 50% progress, not graduated
+  var surgePairs = filtered.filter(function(c) {
+    return !c.graduated && c.progress >= 50;
+  }).sort(function(a, b) { return b.progress - a.progress; });
+
+  // Graduated
+  var graduated = filtered.filter(function(c) {
+    return c.graduated;
+  }).sort(function(a, b) { return (b.lastTrade || 0) - (a.lastTrade || 0); });
+
+  document.getElementById('count-new').textContent = '(' + newPairs.length + ')';
+  document.getElementById('count-surge').textContent = '(' + surgePairs.length + ')';
+  document.getElementById('count-graduated').textContent = '(' + graduated.length + ')';
+  document.getElementById('coin-count').textContent = coins.length;
+
+  var listNew = document.getElementById('list-new');
+  var listSurge = document.getElementById('list-surge');
+  var listGrad = document.getElementById('list-graduated');
+
+  if (newPairs.length === 0) {
+    listNew.innerHTML = '<div class="empty">No new pairs yet</div>';
+  } else {
+    var h = '';
+    for (var i = 0; i < Math.min(newPairs.length, 30); i++) {
+      h += renderToken(newPairs[i], newAddresses.has(newPairs[i].address));
+    }
+    listNew.innerHTML = h;
+  }
+
+  if (surgePairs.length === 0) {
+    listSurge.innerHTML = '<div class="empty">No tokens in final stretch</div>';
+  } else {
+    var h = '';
+    for (var i = 0; i < Math.min(surgePairs.length, 30); i++) {
+      h += renderToken(surgePairs[i], newAddresses.has(surgePairs[i].address));
+    }
+    listSurge.innerHTML = h;
+  }
+
+  if (graduated.length === 0) {
+    listGrad.innerHTML = '<div class="empty">No graduated tokens</div>';
+  } else {
+    var h = '';
+    for (var i = 0; i < Math.min(graduated.length, 30); i++) {
+      h += renderToken(graduated[i], false);
+    }
+    listGrad.innerHTML = h;
+  }
+}
+
+function updateStatus(connected, text) {
+  var dot = document.getElementById('api-status');
+  var txt = document.getElementById('api-text');
+  var wsDot = document.getElementById('ws-status');
+
+  dot.className = 'status-dot ' + (connected ? 'on' : 'off');
+  txt.className = 'status-text ' + (connected ? 'on' : '');
+  txt.textContent = text;
+  wsDot.className = 'logo-dot ' + (wsConnected ? 'live' : 'offline');
+}
+
+function updateTimestamp() {
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+}
+
+function processCoins(data) {
+  if (!data || !Array.isArray(data)) return;
+
+  var newAddresses = new Set();
+  var now = Date.now();
+
+  // Update ages
+  data.forEach(function(c) {
+    if (c.created) {
+      c.age = now - c.created;
+    }
+    if (!knownAddresses.has(c.address)) {
+      newAddresses.add(c.address);
+      knownAddresses.add(c.address);
+    }
+  });
+
+  coins = data;
+  render(newAddresses);
+  updateTimestamp();
+}
+
+// WebSocket connection
+function connectWebSocket() {
+  var wsUrl = 'ws://' + window.location.host + '/ws';
+
+  try {
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = function() {
+      console.log('WebSocket connected');
+      wsConnected = true;
+      updateStatus(true, 'Live • Pump.fun');
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        var data = JSON.parse(event.data);
+        if (data.coins) {
+          processCoins(data.coins);
+        }
+      } catch (e) {
+        console.error('WS parse error:', e);
+      }
+    };
+
+    ws.onclose = function() {
+      console.log('WebSocket disconnected');
+      wsConnected = false;
+      updateStatus(false, 'Disconnected');
+      // Reconnect after 3 seconds
+      setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = function(err) {
+      console.error('WebSocket error:', err);
+      wsConnected = false;
+      updateStatus(false, 'Connection error');
+    };
+  } catch (e) {
+    console.error('WebSocket failed:', e);
+    // Fallback to HTTP polling
+    fetchHTTP();
+    setInterval(fetchHTTP, 10000);
+  }
+}
+
+// HTTP fallback
+function fetchHTTP() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/pump', true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.success && data.coins) {
+          processCoins(data.coins);
+          updateStatus(true, 'Connected • Pump.fun');
+        }
+      } catch (e) {
+        console.error('HTTP parse error:', e);
+      }
+    }
+  };
+  xhr.onerror = function() {
+    updateStatus(false, 'Server offline');
+  };
+  xhr.send();
+}
+
+function refresh() {
+  if (wsConnected && ws) {
+    // Request fresh data via WS
+    ws.send(JSON.stringify({ type: 'refresh' }));
+  } else {
+    fetchHTTP();
+  }
+}
+
+// Search handler
+document.getElementById('search').addEventListener('input', function() {
+  render();
+});
+
+// Initialize
+updateStatus(false, 'Connecting...');
+connectWebSocket();
+
+// Update ages every second
+setInterval(function() {
+  var now = Date.now();
+  coins.forEach(function(c) {
+    if (c.created) {
+      c.age = now - c.created;
+    }
+  });
+  render();
+}, 1000);
+</script>
+</body>
+</html>
